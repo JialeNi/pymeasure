@@ -50,6 +50,19 @@ counts with AINT sources.
 Configuration does not enable output.
 Enable it explicitly when a constant source is wanted.
 
+The independently accepted driver revision used in the 2026-10-27 smoke run
+below first requests output off and verifies the reported state, then aborts
+pending source and acquisition activity.
+For either source mode, it next applies the requested compliance, writes a zero
+immediate voltage setpoint to clear any stale voltage level, selects the
+requested source mode, and enables both source autoranges.
+Only then does it write the requested immediate and triggered source levels.
+The autoranges therefore precede the requested target levels; the preparatory
+zero is not the level whose range is being selected.
+This ordering avoids applying a target level under stale fixed source-range
+settings.
+Other revisions are outside that validated scope.
+
 The current-source setup uses the voltage compliance limit instead::
 
     try:
@@ -161,13 +174,38 @@ DC measurement commands.
 The B2910BL is described as a multimeter, but an output-off ``HIGHZ`` or
 ``NORM`` mode opens the output relay, and ``READ`` or ``INIT`` can enable output
 when automatic output-on is enabled.
-These driver behaviors, relay state, circuit loading, and current burden have
-not been verified on physical hardware (``NOT_RUN``).
-The measurement properties do not promise passive output-off readings and do
-not replace an isolated DMM for arbitrary circuits.
+The 2026-10-27 smoke run used voltage sourcing and did not exercise passive
+output-off readings, relay state, circuit loading, or current burden.
+Those behaviors remain ``NOT_RUN``, and the measurement properties do not
+promise passive output-off readings or replace an isolated DMM for arbitrary
+circuits.
 
-Hardware validation has not been run (``NOT_RUN``).
-Only protocol tests are included for this change.
+No-wire smoke validation (2026-10-27)
+=====================================
+
+A no-wire, no-load smoke run used that driver revision on a B2910BL with firmware
+5.0.2029.1911.
+It ran on Windows 11 with CPython 3.14.3 through PyVISA and the system VISA
+backend.
+The constant-voltage flow used a 100 µA current limit and NPLC 0.1.
+It took single points at requested 0 V, 0.1 V, and 0 V, then ran a host-stepped
+0 V, 0.1 V, 0 V sweep with a 0.1 s settle delay.
+The instrument returned finite voltage and current readings, and no point
+reported a compliance trip.
+These no-load readings do not establish measurement accuracy, calibration,
+external-load behavior, current-source operation, physical protection or
+interlock action, terminal voltage, or deterministic sweep timing.
+The flow requested output off and the instrument finally reported ``OFF``; this
+does not establish physical zero volts at the terminals.
+The SCPI error queues were empty before and after the flow, and cleanup reported
+no errors.
+Only that driver revision, the B2910BL, and these bounded constant-voltage
+flows were exercised.
+The accepted high-voltage and current-source configuration regressions are
+protocol-only and were not physically exercised here.
+Full upstream Sphinx HTML and doctest CI is revision-specific; consult the
+`PR #1578 checks <https://github.com/pymeasure/pymeasure/pull/1578/checks>`_ for
+the current revision.
 
 API reference
 =============
